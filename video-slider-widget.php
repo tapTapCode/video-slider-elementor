@@ -47,12 +47,51 @@ class Video_Slider_Widget extends \Elementor\Widget_Base {
         $repeater = new \Elementor\Repeater();
 
         $repeater->add_control(
+            'video_source',
+            [
+                'label' => esc_html__('Video Source', 'elementor'),
+                'type' => \Elementor\Controls_Manager::SELECT,
+                'default' => 'upload',
+                'options' => [
+                    'upload' => esc_html__('Upload Video', 'elementor'),
+                    'url' => esc_html__('Video URL', 'elementor'),
+                ],
+            ]
+        );
+
+        $repeater->add_control(
+            'video_file',
+            [
+                'label' => esc_html__('Upload Video', 'elementor'),
+                'type' => \Elementor\Controls_Manager::MEDIA,
+                'media_type' => 'video',
+                'condition' => [
+                    'video_source' => 'upload',
+                ],
+            ]
+        );
+
+        $repeater->add_control(
             'video_url',
             [
                 'label' => esc_html__('Video URL', 'elementor'),
                 'type' => \Elementor\Controls_Manager::TEXT,
                 'placeholder' => esc_html__('https://example.com/video.mp4', 'elementor'),
                 'label_block' => true,
+                'condition' => [
+                    'video_source' => 'url',
+                ],
+            ]
+        );
+
+        $repeater->add_control(
+            'enable_poster',
+            [
+                'label' => esc_html__('Enable Poster Image', 'elementor'),
+                'type' => \Elementor\Controls_Manager::SWITCHER,
+                'label_on' => esc_html__('Yes', 'elementor'),
+                'label_off' => esc_html__('No', 'elementor'),
+                'default' => '',
             ]
         );
 
@@ -62,6 +101,9 @@ class Video_Slider_Widget extends \Elementor\Widget_Base {
                 'label' => esc_html__('Poster Image', 'elementor'),
                 'type' => \Elementor\Controls_Manager::MEDIA,
                 'default' => [],
+                'condition' => [
+                    'enable_poster' => 'yes',
+                ],
             ]
         );
 
@@ -73,10 +115,10 @@ class Video_Slider_Widget extends \Elementor\Widget_Base {
                 'fields' => $repeater->get_controls(),
                 'default' => [
                     [
-                        'video_url' => '',
+                        'video_source' => 'upload',
                     ],
                 ],
-                'title_field' => '{{{ video_url }}}',
+                'title_field' => '<# if (video_source === "upload") { #>Uploaded Video<# } else { #>{{{ video_url }}}<# } #>',
             ]
         );
 
@@ -212,6 +254,36 @@ class Video_Slider_Widget extends \Elementor\Widget_Base {
         );
 
         $this->end_controls_section();
+
+        // Video Style Section
+        $this->start_controls_section(
+            'video_style_section',
+            [
+                'label' => esc_html__('Video Style', 'elementor'),
+                'tab' => \Elementor\Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        $this->add_control(
+            'video_border_radius',
+            [
+                'label' => esc_html__('Video Border Radius', 'elementor'),
+                'type' => \Elementor\Controls_Manager::DIMENSIONS,
+                'size_units' => ['px', '%'],
+                'default' => [
+                    'top' => 0,
+                    'right' => 0,
+                    'bottom' => 0,
+                    'left' => 0,
+                    'unit' => 'px',
+                ],
+                'selectors' => [
+                    '{{WRAPPER}} .video-slide' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+                ],
+            ]
+        );
+
+        $this->end_controls_section();
     }
 
     protected function render() {
@@ -240,10 +312,18 @@ class Video_Slider_Widget extends \Elementor\Widget_Base {
                 
                 <div class="swiper-wrapper">
                     <?php foreach ($settings['videos'] as $video) : 
-                        $video_url = esc_url($video['video_url']);
-                        $poster_url = !empty($video['video_poster']['url']) 
-                            ? esc_url($video['video_poster']['url']) 
-                            : '';
+                        // Get video URL based on source
+                        if ($video['video_source'] === 'upload' && !empty($video['video_file']['url'])) {
+                            $video_url = esc_url($video['video_file']['url']);
+                        } else {
+                            $video_url = esc_url($video['video_url']);
+                        }
+
+                        // Get poster URL if enabled
+                        $poster_url = '';
+                        if ($video['enable_poster'] === 'yes' && !empty($video['video_poster']['url'])) {
+                            $poster_url = esc_url($video['video_poster']['url']);
+                        }
                     ?>
                         <div class="swiper-slide">
                             <video class="video-slide" 
@@ -271,10 +351,13 @@ class Video_Slider_Widget extends \Elementor\Widget_Base {
         <div class="video-slider-wrapper" style="height: 500px;">
             <div class="swiper video-slider-container">
                 <div class="swiper-wrapper">
-                    <# _.each(settings.videos, function(video) { #>
+                    <# _.each(settings.videos, function(video) { 
+                        var videoUrl = video.video_source === 'upload' && video.video_file.url ? video.video_file.url : video.video_url;
+                        var posterUrl = video.enable_poster === 'yes' && video.video_poster.url ? video.video_poster.url : '';
+                    #>
                         <div class="swiper-slide">
-                            <video class="video-slide" width="100%" height="500" controls style="display: block; width: 100%; height: 100%; object-fit: cover;" <# if(video.video_poster.url) { #>poster="{{{ video.video_poster.url }}}"<# } #>>
-                                <source src="{{{ video.video_url }}}" type="video/mp4">
+                            <video class="video-slide" width="100%" height="500" controls style="display: block; width: 100%; height: 100%; object-fit: cover;" <# if(posterUrl) { #>poster="{{{ posterUrl }}}"<# } #>>
+                                <source src="{{{ videoUrl }}}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
                         </div>
