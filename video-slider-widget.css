@@ -1,0 +1,61 @@
+/* Video Slider Widget Styles */
+
+.video-slider-wrapper {
+    width: 100%;
+    overflow: hidden;
+}
+
+.video-slider-container {
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+}
+
+.video-slider-container.swiper {
+    height: 100%;
+}
+
+.swiper-slide {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-slide {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Remove navigation buttons */
+.video-slider-container .swiper-button-next,
+.video-slider-container .swiper-button-prev,
+.video-slider-container .swiper-pagination {
+    display: none !important;
+}
+
+/* Smooth fade transition */
+.video-slider-container.swiper-container {
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Tablet and mobile responsiveness */
+@media (max-width: 768px) {
+    .video-slider-wrapper {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-slider-wrapper {
+        max-height: 300px;
+    }
+}
+
+/* Ensure videos maintain aspect ratio */
+.video-slider-wrapper video {
+    max-width: 100%;
+    height: auto;
+}
